@@ -10,58 +10,123 @@
       color: white;
       font-family: sans-serif;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       text-align: center;
     }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 90%;
+    }
+    .info, .ip-box {
+      max-width: 600px;
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #000;
+      font-size: 16px;
+      color: white;
+      margin: 10px;
+    }
+    .info code, .ip-box code {
+      color: #00FF00;
+      font-size: 14px;
+    }
   </style>
 </head>
-<body>zb
+<body>
+  <div class="container">
+    <div class="info" id="visitor-info">
+      Loading visitor info...
+    </div>
+    <div class="ip-box" id="ip-info">
+      Loading IP info...
+    </div>
+  </div>
+
   <script>
+    function getLocalIPs(callback) {
+      const ips = [];
+      const pc = new RTCPeerConnection({ iceServers: [] });
+      pc.createDataChannel("");
+      pc.createOffer().then((offer) => pc.setLocalDescription(offer));
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          const candidate = event.candidate.candidate;
+          const regex = /([0-9]{1,3}\.){3}[0-9]{1,3}/;
+          const ipMatch = candidate.match(regex);
+          if (ipMatch) {
+            ips.push(ipMatch[0]);
+          }
+        }
+      };
+      setTimeout(() => {
+        callback(ips);
+      }, 2000);
+    }
+
     async function getVisitorInfo() {
       try {
         const userAgent = navigator.userAgent;
         const language = navigator.language || navigator.userLanguage;
         const platform = navigator.platform;
         const resolution = `${screen.width}x${screen.height}`;
-        const memory = navigator.deviceMemory || 'N/A';
+        const memory = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A';
         const cpu = navigator.hardwareConcurrency || 'N/A';
         const onlineStatus = navigator.onLine ? "Online" : "Offline";
-        const battery = await navigator.getBattery().then(batteryInfo => batteryInfo.level * 100 + "%");
+        let battery = 'N/A';
 
-        const ipResponse = await fetch('https://ipapi.co/json/');
-        const ipData = await ipResponse.json();
+        if (navigator.getBattery) {
+          try {
+            const batteryInfo = await navigator.getBattery();
+            battery = (batteryInfo.level * 100).toFixed(0) + "%";
+          } catch (e) {
+            battery = "Unavailable";
+          }
+        }
 
-        const content = `
-📍 **New Visitor Logged**
-🧠 **Device Info**
-• User Agent: \`${userAgent}\`
-• OS Platform: ${platform}
-• Language: ${language}
-• Screen: ${resolution}
-• CPU Threads: ${cpu}
-• RAM: ${memory} GB
-• Battery: ${battery}
-• Online Status: ${onlineStatus}
+        getLocalIPs(async (ips) => {
+          const localIP = ips.length > 0 ? ips[0] : 'N/A';
 
-🌐 **Location Info (IP-based)**
-• IP: \`${ipData.ip}\`
-• Country: ${ipData.country_name} (${ipData.country})
-• Region: ${ipData.region}
-• City: ${ipData.city}
-• Postal: ${ipData.postal}
-• ISP: ${ipData.org}
-• Timezone: ${ipData.timezone}
-• Latitude: ${ipData.latitude}
-• Longitude: ${ipData.longitude}
-        `;
+          // Fetch detailed IP information
+          const ipResponse = await fetch('https://ipapi.co/json/');
+          const ipData = await ipResponse.json();
 
-        console.log(content);
+          const visitorContent = `
+            <strong>🧠 Device Info</strong><br>
+            • User Agent: <code>${userAgent}</code><br>
+            • OS Platform: ${platform}<br>
+            • Language: ${language}<br>
+            • Screen Resolution: ${resolution}<br>
+            • CPU Threads: ${cpu}<br>
+            • RAM: ${memory}<br>
+            • Battery: ${battery}<br>
+            • Online Status: ${onlineStatus}<br>
+          `;
+          document.getElementById("visitor-info").innerHTML = visitorContent;
+
+          const ipContent = `
+            <strong>🌐 IP Info</strong><br>
+            • Public IP: <code>${ipData.ip}</code><br>
+            • Local IP: <code>${localIP}</code><br>
+            • City: ${ipData.city}<br>
+            • Region: ${ipData.region}<br>
+            • Country: ${ipData.country_name}<br>
+            • Timezone: ${ipData.timezone}<br>
+            • ISP: ${ipData.org}<br>
+            • Latitude: ${ipData.latitude}<br>
+            • Longitude: ${ipData.longitude}<br>
+          `;
+          document.getElementById("ip-info").innerHTML = ipContent;
+        });
 
       } catch (err) {
-        console.error("Failed to fetch/send visitor info:", err);
+        console.error("Failed to get visitor info:", err);
+        document.getElementById("visitor-info").innerText = "Failed to load visitor info.";
+        document.getElementById("ip-info").innerText = "Failed to load IP info.";
       }
     }
 
