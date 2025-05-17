@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Webhook & Token Manager | Hada</title>
+  <title>Webhook | Hada</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -123,12 +123,11 @@
 </head>
 <body>
   <div class="container">
-    <h1>Webhook & Token Manager</h1>
+    <h1>Webhook Manager</h1>
 
     <div class="box">
-      <label for="mainInput" class="info-label" id="inputLabel">Enter Webhook URL or Bot Token</label>
-      <input type="text" id="mainInput" placeholder="Paste webhook URL or bot token…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-      <input type="text" id="channelInput" placeholder="Channel ID (for bot token)" style="display:none;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <label for="webhookInput" class="info-label">Enter Webhook URL</label>
+      <input type="text" id="webhookInput" placeholder="Paste webhook URL…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button id="loadBtn" onclick="loadInfo()">Load Info</button>
     </div>
 
@@ -138,7 +137,7 @@
         <img id="avatar" src="" alt="Avatar" />
         <div>
           <p><strong>Username:</strong> <span id="username"></span></p>
-          <p><strong>Status:</strong> <span id="status"></span></p>
+          <p><strong>Status:</strong> <span id="status">Webhook</span></p>
           <p><strong>Description:</strong> <span id="desc"></span></p>
         </div>
       </div>
@@ -146,91 +145,48 @@
         <input type="text" id="messageInput" placeholder="Type your message…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         <input type="number" id="messageCount" placeholder="# times" min="1" max="100" value="1" />
         <button onclick="sendMessage()">Send Message</button>
-        <button class="danger" id="deleteBtn" onclick="deleteWebhook()" style="display:none;">Delete Webhook</button>
-        <button onclick="clearChannel()">Clear</button>
+        <button class="danger" id="deleteBtn" onclick="deleteWebhook()">Delete Webhook</button>
+        <button onclick="clearAll()">Clear</button>
       </div>
     </div>
   </div>
 
   <script>
     let currentWebhookURL = "";
-    let currentToken = "";
-    let isWebhook = false;
-    let currentUserId = "";
 
     function isWebhookURL(input) {
       return input.startsWith("https://discord.com/api/webhooks") || input.startsWith("http://discord.com/api/webhooks");
     }
 
-    function updateUIForMode() {
-      if (isWebhook) {
-        document.getElementById("channelInput").style.display = 'none';
-        document.getElementById("deleteBtn").style.display = 'inline-block';
-      } else {
-        document.getElementById("channelInput").style.display = 'block';
-        document.getElementById("deleteBtn").style.display = 'none';
-      }
-    }
-
     async function loadInfo() {
-      const inputVal = document.getElementById("mainInput").value.trim();
-      if (!inputVal) return alert("Please enter a webhook URL or bot token.");
-
-      isWebhook = isWebhookURL(inputVal);
-      updateUIForMode();
+      const inputVal = document.getElementById("webhookInput").value.trim();
+      if (!inputVal) return alert("Please enter a webhook URL.");
+      if (!isWebhookURL(inputVal)) return alert("Invalid webhook URL.");
 
       document.getElementById("loadBtn").disabled = true;
 
-      if (isWebhook) {
-        // Webhook mode
-        try {
-          const res = await fetch(inputVal);
-          if (!res.ok) throw new Error();
-          const data = await res.json();
-          currentWebhookURL = inputVal;
-          currentToken = "";
-          currentUserId = "";
-          document.getElementById("avatar").src = data.avatar
-            ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
-            : "https://cdn.discordapp.com/embed/avatars/1.png";
-          document.getElementById("username").textContent = data.name;
-          document.getElementById("status").textContent = "Webhook";
-          document.getElementById("desc").textContent = data.channel_id
-            ? `Channel ID: ${data.channel_id}`
-            : "No description.";
-          document.getElementById("infoBox").style.display = 'block';
-        } catch {
-          alert("Invalid webhook URL");
-          document.getElementById("infoBox").style.display = 'none';
-        } finally {
-          document.getElementById("loadBtn").disabled = false;
-        }
-      } else {
-        // Token mode
-        try {
-          const res = await fetch("https://discord.com/api/v10/users/@me", {
-            headers: {
-              Authorization: `Bot ${inputVal}`
-            }
-          });
-          if (!res.ok) throw new Error("Invalid token or network error");
-          const data = await res.json();
-          currentToken = inputVal;
-          currentWebhookURL = "";
-          currentUserId = data.id;
-          document.getElementById("avatar").src = data.avatar
-            ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
-            : "https://cdn.discordapp.com/embed/avatars/1.png";
-          document.getElementById("username").textContent = `${data.username}#${data.discriminator}`;
-          document.getElementById("status").textContent = "Bot Token";
-          document.getElementById("desc").textContent = `ID: ${data.id}`;
-          document.getElementById("infoBox").style.display = 'block';
-        } catch (e) {
-          alert("Invalid bot token or network error.");
-          document.getElementById("infoBox").style.display = 'none';
-        } finally {
-          document.getElementById("loadBtn").disabled = false;
-        }
+      try {
+        const res = await fetch(inputVal);
+        if (!res.ok) throw new Error("Failed to fetch webhook info");
+        const data = await res.json();
+        currentWebhookURL = inputVal;
+
+        document.getElementById("avatar").src = data.avatar
+          ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`
+          : "https://cdn.discordapp.com/embed/avatars/1.png";
+
+        document.getElementById("username").textContent = data.name;
+        document.getElementById("desc").textContent = data.channel_id
+          ? `Channel ID: ${data.channel_id}`
+          : "No description.";
+        document.getElementById("status").textContent = "Webhook";
+        document.getElementById("infoBox").style.display = 'block';
+      } catch (e) {
+        alert("Invalid webhook URL or unable to fetch info.");
+        document.getElementById("infoBox").style.display = 'none';
+        currentWebhookURL = "";
+      } finally {
+        document.getElementById("loadBtn").disabled = false;
       }
     }
 
@@ -239,47 +195,20 @@
       let count = parseInt(document.getElementById("messageCount").value, 10);
       if (!msg) return alert("Please enter a message to send.");
       if (!count || count < 1) count = 1;
+      if (!currentWebhookURL) return alert("Load a valid webhook first.");
 
-      if (isWebhook) {
-        if (!currentWebhookURL) return alert("Load a valid webhook first.");
-        for (let i = 0; i < count; i++) {
-         await fetch(currentWebhookURL, {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({ content: msg }),
-          });
-        }
-        alert("Messages sent!");
-      } else {
-       // Token mode: send messages via bot token to channel
-        const channelId = document.getElementById("channelInput").value.trim();
-        if (!channelId) return alert("Please enter the Channel ID.");
-        if (!currentToken) return alert("Load a valid bot token first.");
-        for (let i = 0; i < count; i++) {
-          try {
-            const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bot ${currentToken}`,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ content: msg }),
-            });
-            if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(errorData.message || "Failed to send message");
-            }
-          } catch (e) {
-            alert(`Error sending message: ${e.message}`);
-            break;
-          }
-        }
-        alert("Messages sent!");
+      for (let i = 0; i < count; i++) {
+        await fetch(currentWebhookURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: msg }),
+        });
       }
+      alert("Messages sent!");
     }
 
     async function deleteWebhook() {
-      if (!isWebhook || !currentWebhookURL) return alert("No webhook loaded to delete.");
+      if (!currentWebhookURL) return alert("No webhook loaded to delete.");
       if (!confirm("Are you sure you want to delete this webhook? This action cannot be undone.")) return;
 
       try {
@@ -294,19 +223,10 @@
 
     function clearAll() {
       currentWebhookURL = "";
-      currentToken = "";
-      currentUserId = "";
-      isWebhook = false;
-      document.getElementById("mainInput").value = "";
-      document.getElementById("channelInput").value = "";
+      document.getElementById("webhookInput").value = "";
       document.getElementById("messageInput").value = "";
       document.getElementById("messageCount").value = "1";
       document.getElementById("infoBox").style.display = 'none';
-      updateUIForMode();
-    }
-
-    function clearChannel() {
-      document.getElementById("channelInput").value = "";
     }
   </script>
 </body>
